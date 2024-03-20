@@ -1,0 +1,91 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  DocDBUsername:
+    Type: String
+    Description: Username for the Amazon DocumentDB cluster
+
+  DocDBPassword:
+    Type: String
+    Description: Password for the Amazon DocumentDB cluster
+    NoEcho: true
+    MinLength: 8
+
+Mappings:
+  SubnetConfig:
+    VPC:
+      CIDR: '192.168.0.0/16'
+    PublicOne:
+      CIDR: '192.168.10.0/24'
+    PrivateOne:
+      CIDR: '192.168.100.0/24'
+    PrivateTwo:
+      CIDR: '192.168.101.0/24'
+    DocDBClusters:
+      CIDR: '192.168.110.0/24'
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: !FindInMap ['SubnetConfig', 'VPC', 'CIDR']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+  PublicSubnetOne:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+         Fn::Select:
+         - 0
+         - Fn::GetAZs: {Ref: 'AWS::Region'}
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap ['SubnetConfig', 'PublicOne', 'CIDR']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicOne
+
+  PrivateSubnetOne:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+         Fn::Select:
+         - 0
+         - Fn::GetAZs: {Ref: 'AWS::Region'}
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateOne', 'CIDR']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateOne
+
+  PrivateSubnetTwo:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+         Fn::Select:
+         - 1
+         - Fn::GetAZs: {Ref: 'AWS::Region'}
+      VpcId: !Ref VPC
+      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateTwo', 'CIDR']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateTwo
+  
+  DocumentDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Amazon DocumentDB Security Group
+      GroupName: !Sub ${AWS::StackName}-SG-DocumentDB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+         - IpProtocol: tcp
+           CidrIp: 10.0.0.0/16
+           FromPort: 27017
+           ToPort: 27017
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-SG-DocumentDB

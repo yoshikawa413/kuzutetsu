@@ -2,8 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Resources:
   S3Bucket:
     Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub 'glue-test-${AWS::AccountId}'
+      BucketName: !Sub 'athena-test-${AWS::AccountId}'
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled
@@ -24,28 +25,24 @@ Resources:
       CatalogId: !Ref AWS::AccountId
       DatabaseName: !Ref GlueDatabase
       TableInput:
-        Name: "product_details"
+        Name: "iceberg_table"
         StorageDescriptor:
           Columns:
-            - Name: "product_id"
+            - Name: "id"
               Type: "string"
-            - Name: "manufacture_name"
-              Type: "string"
-            - Name: "product_rating"
-              Type: "int"
-          Location: !Sub "s3://${S3Bucket}/"
+          Location: !Sub "s3://${S3Bucket}/iceberg/"
         TableType: "EXTERNAL_TABLE"
       OpenTableFormatInput:
         IcebergInput:
           MetadataOperation: "CREATE"
           Version: "2"
-  GlueTableOptimizer:
-    Type: AWS::Glue::TableOptimizer
-    Properties:
-      CatalogId: !Ref AWS::AccountId
-      DatabaseName: !Ref GlueDatabase
-      TableName: !Ref IcebergTable
-      Type: "compaction"
-      TableOptimizerConfiguration:
-        RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/iceberg-compaction'
-        Enabled: True
+  # GlueTableOptimizer:
+  #   Type: AWS::Glue::TableOptimizer
+  #   Properties:
+  #     CatalogId: !Ref AWS::AccountId
+  #     DatabaseName: !Ref GlueDatabase
+  #     TableName: !Ref IcebergTable
+  #     Type: "compaction"
+  #     TableOptimizerConfiguration:
+  #       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/iceberg-compaction'
+  #       Enabled: True

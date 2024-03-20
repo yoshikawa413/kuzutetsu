@@ -1,0 +1,6 @@
+fields @message
+| parse @message "[{'QueryExecutionId': *, *]" as executionId, _
+| sort @timestamp desc
+| filter @message like /QueryExecutionId/
+| DISPLAY executionId
+| limit 1000
