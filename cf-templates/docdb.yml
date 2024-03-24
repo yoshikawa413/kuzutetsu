@@ -5,12 +5,14 @@ Parameters:
   DocDBUsername:
     Type: String
     Description: Username for the Amazon DocumentDB cluster
-
   DocDBPassword:
     Type: String
     Description: Password for the Amazon DocumentDB cluster
     NoEcho: true
     MinLength: 8
+  DocDBInstanceType:
+    Type: String
+    Default: db.t3.medium
 
 Mappings:
   SubnetConfig:
@@ -22,8 +24,8 @@ Mappings:
       CIDR: '192.168.100.0/24'
     PrivateTwo:
       CIDR: '192.168.101.0/24'
-    DocDBClusters:
-      CIDR: '192.168.110.0/24'
+    PrivateThree:
+      CIDR: '192.168.102.0/24'
 
 Resources:
   VPC:
@@ -35,6 +37,7 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-VPC
+  
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
@@ -74,18 +77,139 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-PrivateTwo
-  
-  DocumentDBSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties: 
-      GroupDescription: Amazon DocumentDB Security Group
-      GroupName: !Sub ${AWS::StackName}-SG-DocumentDB
+
+  PrivateSubnetThree:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone:
+         Fn::Select:
+         - 2
+         - Fn::GetAZs: {Ref: 'AWS::Region'}
       VpcId: !Ref VPC
-      SecurityGroupIngress:
-         - IpProtocol: tcp
-           CidrIp: 10.0.0.0/16
-           FromPort: 27017
-           ToPort: 27017
+      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateThree', 'CIDR']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PrivateThree
+
+  DocumentDBSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: Subnet Group for DocumentDB
+      DBSubnetGroupName: !Sub ${AWS::StackName}-SG-DocumentDB
+      SubnetIds: 
+         - !Ref PrivateSubnetOne
+         - !Ref PrivateSubnetTwo
+         - !Ref PrivateSubnetThree
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-SG-DocumentDB
+
+  DocumentDBCluster: 
+    Type: AWS::DocDB::DBCluster
+    Properties: 
+      DBClusterIdentifier: !Sub ${AWS::StackName}-DocumentDB
+      MasterUsername: !Ref DocDBUsername
+      MasterUserPassword: !Ref DocDBPassword
+      DBSubnetGroupName : !Ref DocumentDBSubnetGroup
+      StorageEncrypted: yes
+      Tags: 
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DocumentDB
+      VpcSecurityGroupIds: 
+        - !GetAtt VPC.DefaultSecurityGroup
+    DependsOn: VPC
+
+  DocumentDBInstanceOne: 
+    Type: AWS::DocDB::DBInstance
+    Properties: 
+      DBClusterIdentifier: !Ref DocumentDBCluster
+      DBInstanceClass: !Ref DocDBInstanceType
+      Tags: 
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-DocumentDBInstance1
+
+  # VPCS3Endpoint:
+  #   Type: AWS::EC2::VPCEndpoint
+  #   Properties:
+  #     VpcEndpointType: "Gateway"
+  #     ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+  #     RouteTableIds:
+  #       - ""
+  #     VpcId: !Ref VPC
+
+  DocdbJobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "glue.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "DocdbJobRolePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action: "s3:*"
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action: "glue:*"
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action: "ec2:*"
+                Resource: "*"
+              -
+                Effect: "Allow"
+                Action: "logs:*"
+                Resource: "*"
+
+  DocdbJobConnection:
+    Type: AWS::Glue::Connection
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      ConnectionInput:
+        ConnectionProperties: {
+          "CONNECTION_URL": !Sub "mongodb://${DocumentDBCluster.Endpoint}:27017",
+          "USERNAME": !Ref DocDBUsername,
+          "PASSWORD": !Ref DocDBPassword,
+          "JDBC_ENFORCE_SSL": "true"
+        }
+        ConnectionType: "MONGODB"
+        Name: "docdb-conn"
+        PhysicalConnectionRequirements: 
+          SecurityGroupIdList:
+            - !GetAtt VPC.DefaultSecurityGroup
+          SubnetId: !Ref PrivateSubnetThree
+
+  DocdbJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://aws-glue-assets-${AWS::AccountId}-ap-northeast-1/scripts/test_json.py"
+      # DefaultArguments:
+      #   "--job-bookmark-option": "job-bookmark-enable"
+      Connections:
+        Connections:
+          - !Ref DocdbJobConnection
+      GlueVersion: 4.0
+      WorkerType: "G.1X"
+      NumberOfWorkers: 2
+      # MaxCapacity: 2
+      Timeout: 5
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      MaxRetries: 0
+      Name: docdb-job
+      Role: !Ref DocdbJobRole
