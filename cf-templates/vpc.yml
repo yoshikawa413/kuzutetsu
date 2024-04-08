@@ -57,7 +57,7 @@ Resources:
     Properties:
       AvailabilityZone:
          Fn::Select:
-         - 1
+         - 2
          - Fn::GetAZs: {Ref: 'AWS::Region'}
       VpcId: !Ref VPC
       CidrBlock: !FindInMap ['SubnetConfig', 'PrivateTwo', 'CIDR']
@@ -70,7 +70,7 @@ Resources:
     Properties:
       AvailabilityZone:
          Fn::Select:
-         - 2
+         - 3
          - Fn::GetAZs: {Ref: 'AWS::Region'}
       VpcId: !Ref VPC
       CidrBlock: !FindInMap ['SubnetConfig', 'PrivateThree', 'CIDR']
@@ -91,3 +91,7 @@ Outputs:
     Value: !Ref PrivateSubnetThree
     Export:
       Name: PrivateSubnetThree
+  VPCDefaultSecurityGroup:
+    Value: !GetAtt VPC.DefaultSecurityGroup
+    Export:
+      Name: VPCDefaultSecurityGroup

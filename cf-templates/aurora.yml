@@ -101,6 +101,12 @@ Resources:
         Variables:
           RDS_CLUSTER_ARN: !GetAtt RDSCluster.DBClusterArn
           SECRET_ARN: !Ref RDSUserSecret
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue VPCDefaultSecurityGroup
+        SubnetIds:
+          - !ImportValue PrivateSubnetOne
+          - !ImportValue PrivateSubnetTwo
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -126,6 +132,10 @@ Resources:
           - Effect: Allow
             Action:
             - "rds-data:*"
+            - "ec2:CreateNetworkInterface"
+            - "ec2:DescribeNetworkInterfaces"
+            - "ec2:DetachNetworkInterface"
+            - "ec2:DeleteNetworkInterface"
             Resource: "*"
 
   InvokeLambda:
