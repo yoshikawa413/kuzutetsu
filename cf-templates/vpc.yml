@@ -80,11 +80,14 @@ Resources:
 
 Outputs:
   PrivateSubnetOne:
-    Value:
-      Ref: PrivateSubnetOne
+    Value: !Ref PrivateSubnetOne
+    Export:
+      Name: PrivateSubnetOne
   PrivateSubnetTwo:
-    Value:
-      Ref: PrivateSubnetTwo
+    Value: !Ref PrivateSubnetTwo
+    Export:
+      Name: PrivateSubnetTwo
   PrivateSubnetThree:
-    Value:
-      Ref: PrivateSubnetThree
+    Value: !Ref PrivateSubnetThree
+    Export:
+      Name: PrivateSubnetThree
