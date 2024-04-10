@@ -50,3 +50,13 @@ $ aws s3 cp target/psycopg2-binary.zip s3://hogehoge/
 ```
 docker run --rm -it --entrypoint bash --name amznlinux-arm64 --mount type=bind,source="$(pwd)"/target,target=/repositories multiarch/qemu-user-static
 ```
+
+# RDS
+
+### rds-data
+
+https://aws.amazon.com/jp/blogs/database/using-the-data-api-to-interact-with-an-amazon-aurora-serverless-mysql-database/
+
+```
+aws rds-data execute-statement --resource-arn "arn:aws:rds:ap-northeast-1::cluster:" --secret-arn "arn:aws:secretsmanager:::" --sql "select * from hogehoge where no = ANY(string_to_array(:no, ','))" --database "postgres" --parameters '[{"name": "no", "value": {"stringValue": "10, 20"}}]' --region ap-northeast-1
+```

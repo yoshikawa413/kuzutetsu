@@ -43,6 +43,7 @@ Resources:
       ServerlessV2ScalingConfiguration:
         MaxCapacity: 1
         MinCapacity: 0.5
+      EnableHttpEndpoint: true
   RDSDBInstance1:
     Type: 'AWS::RDS::DBInstance'
     Properties:
@@ -68,7 +69,7 @@ Resources:
               response = client.execute_statement(
                   resourceArn=RDS_CLUSTER_ARN,
                   secretArn=SECRET_ARN,
-                  sql=str,
+                  sql=sql,
                   includeResultMetadata=False,
                   formatRecordsAs="JSON",
               )
