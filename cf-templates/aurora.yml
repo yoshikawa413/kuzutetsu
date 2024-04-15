@@ -90,7 +90,7 @@ Resources:
                   [execute_statement(client, sql) for sql in SQLS]
 
                   cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-              except:  # noqa: E722
+              except Exception:  # noqa: E722
                   cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
 
