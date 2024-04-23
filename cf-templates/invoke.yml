@@ -1,28 +1,43 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
 Resources:
   Primer:
-    Type: AWS::Serverless::Function
+    Type: AWS::Lambda::Function
     Properties:
       Handler: index.handler
       Runtime: python3.9
-      InlineCode: |
-        import cfnresponse
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import boto3
 
 
-        def handler(event, context):
-            try:
-                cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-            except Exception:  # noqa: E722
-                cfnresponse.send(event, context, cfnresponse.FAILED, {})
+          def init(**kwargs):
+              print(f"{kwargs=}")
+
+
+          def handler(event, context):
+              try:
+                  if event["RequestType"] == "Create":
+                      init(**event["ResourceProperties"])
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  elif event["RequestType"] == "Delete":
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  elif event["RequestType"] == "Update":
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                  else:
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              except Exception as e:  # noqa: E722
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
       Description: Invoke a function.
       Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: 30
-  Primerinvoke:
-    Type: AWS::CloudFormation::CustomResource
+  InvokeLambda:
+    Type: Custom::InvokeLambda
     Version: "1.0"
     Properties:
       ServiceToken: !GetAtt Primer.Arn
+      param1: hoge
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
