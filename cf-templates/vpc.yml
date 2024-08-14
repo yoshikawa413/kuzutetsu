@@ -39,8 +39,7 @@ Resources:
   PrivateSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone:
-         Fn::Select: 'ap-northeast-1a'
+      AvailabilityZone: 'ap-northeast-1a'
       VpcId: !Ref VPC
       CidrBlock: !FindInMap ['SubnetConfig', 'PrivateOne', 'CIDR']
       Tags:
@@ -50,8 +49,7 @@ Resources:
   PrivateSubnetTwo:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone:
-         Fn::Select: 'ap-northeast-1c'
+      AvailabilityZone: 'ap-northeast-1c'
       VpcId: !Ref VPC
       CidrBlock: !FindInMap ['SubnetConfig', 'PrivateTwo', 'CIDR']
       Tags:
