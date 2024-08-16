@@ -39,6 +39,7 @@ Resources:
       MasterUsername: !Ref RDSMasterUsername
       MasterUserPassword: !Ref RDSMasterPassword
       Engine: aurora-postgresql
+      EngineVersion: '16.3'
       DatabaseName: test
       DBSubnetGroupName: !Ref RDSSubnetGroup
       ServerlessV2ScalingConfiguration:
