@@ -1,0 +1,9 @@
+Resources:
+  RDSDBParameterGroup:
+    Type: 'AWS::RDS::DBParameterGroup'
+    Properties:
+      Description: CloudFormation PostgreSQL Parameter Group
+      DBParameterGroupName: 'postgres16-cron'
+      Family: 'postgres16'
+      Parameters:
+        shared_preload_libraries: pg_stat_statements,pg_tle,pg_cron

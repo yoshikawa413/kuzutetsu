@@ -51,6 +51,7 @@ Resources:
       Engine: aurora-postgresql
       DBClusterIdentifier: !Ref RDSCluster
       DBInstanceClass: db.serverless
+      DBParameterGroupName: 'postgres16-cron'
 Outputs:
   OutputRDSUserSecretArn:
     Value: !Ref RDSUserSecret
