@@ -15,12 +15,12 @@ Resources:
   RDSUserSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
-      Name: RDSUserSecret
+      Name: rds_user
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${RDSMasterUsername}", "password":"${RDSMasterPassword}"}'
-        GenerateStringKey: "password"
-        PasswordLength: 20
-        ExcludeCharacters: '"@/\'
+#        GenerateStringKey: "password"
+#        PasswordLength: 20
+#        ExcludeCharacters: '"@/\'
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties: 
@@ -144,5 +144,5 @@ Resources:
     Type: AWS::CloudFormation::CustomResource
     Version: "1.0"
     Properties:
-      ServiceTimeout: '60'
+      ServiceTimeout: 60
       ServiceToken: !GetAtt LambdaFunction.Arn
