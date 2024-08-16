@@ -36,12 +36,12 @@ Resources:
     DependsOn: 'RDSUserSecret'
     Type: 'AWS::RDS::DBCluster'
     Properties:
-      MasterUsername: !Ref RDSMasterUsername
-      MasterUserPassword: !Ref RDSMasterPassword
-      Engine: aurora-postgresql
+      MasterUsername: !Ref 'RDSMasterUsername'
+      MasterUserPassword: !Ref 'RDSMasterPassword'
+      Engine: 'aurora-postgresql'
       EngineVersion: '16.3'
-      DatabaseName: test
-      DBSubnetGroupName: !Ref RDSSubnetGroup
+      DatabaseName: 'test'
+      DBSubnetGroupName: !Ref 'RDSSubnetGroup'
       ServerlessV2ScalingConfiguration:
         MaxCapacity: 1
         MinCapacity: 0.5
@@ -49,17 +49,18 @@ Resources:
   RDSDBInstance1:
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      Engine: aurora-postgresql
-      DBClusterIdentifier: !Ref RDSCluster
-      DBInstanceClass: db.serverless
+      DBClusterIdentifier: !Ref 'RDSCluster'
+      DBInstanceClass: 'db.serverless'
       DBParameterGroupName: 'postgres16-cron'
+      Engine: 'aurora-postgresql'
+      EngineVersion: '16.3'
 Outputs:
   OutputRDSUserSecretArn:
     Value: !Ref RDSUserSecret
     Export:
       Name: RDSUserSecretArn
   OutputRDSClusterArn:
-    Value: !Ref RDSCluster
+    Value: !GetAtt RDSCluster.DBClusterArn
     Export:
       Name: RDSCluster
   OutputRDSDBName:
