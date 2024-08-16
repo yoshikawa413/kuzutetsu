@@ -17,7 +17,7 @@ Resources:
     Properties:
       Name: RDSUserSecret
       GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "${RDSMasterUsername}"}'
+        SecretStringTemplate: !Sub '{"username": "${RDSMasterUsername}", "password":"${RDSMasterPassword}"}'
         GenerateStringKey: "password"
         PasswordLength: 20
         ExcludeCharacters: '"@/\'
@@ -34,6 +34,7 @@ Resources:
         - Key: Name
           Value: !Sub ${AWS::StackName}-sg-rds
   RDSCluster:
+    DependsOn: 'RDSUserSecret'
     Type: 'AWS::RDS::DBCluster'
     Properties:
       MasterUsername: !Ref RDSMasterUsername
@@ -97,7 +98,7 @@ Resources:
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.9
-      Timeout: 30
+      Timeout: 60
       Environment:
         Variables:
           RDS_CLUSTER_ARN: !GetAtt RDSCluster.DBClusterArn
@@ -141,7 +142,7 @@ Resources:
 
   InvokeLambda:
     Type: AWS::CloudFormation::CustomResource
-    DependsOn: LambdaFunction
     Version: "1.0"
     Properties:
+      ServiceTimeout: '60'
       ServiceToken: !GetAtt LambdaFunction.Arn
