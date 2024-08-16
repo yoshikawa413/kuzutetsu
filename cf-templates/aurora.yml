@@ -18,7 +18,7 @@ Resources:
   RDSUserSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
-      Name: rds_user
+      Name: rds_master_user
       SecretString: !Sub '{"username": "${RDSMasterUsername}", "password":"${RDSMasterPassword}"}'
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
@@ -39,6 +39,7 @@ Resources:
       MasterUsername: !Ref RDSMasterUsername
       MasterUserPassword: !Ref RDSMasterPassword
       Engine: aurora-postgresql
+      DatabaseName: test
       DBSubnetGroupName: !Ref RDSSubnetGroup
       ServerlessV2ScalingConfiguration:
         MaxCapacity: 1
@@ -50,7 +51,6 @@ Resources:
       Engine: aurora-postgresql
       DBClusterIdentifier: !Ref RDSCluster
       DBInstanceClass: db.serverless
-      DBName: ''
 Outputs:
   OutputRDSUserSecretArn:
     Value: !Ref RDSUserSecret
