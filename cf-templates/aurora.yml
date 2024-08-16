@@ -19,8 +19,7 @@ Resources:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
       Name: rds_user
-      GenerateSecretString:
-        SecretStringTemplate: !Sub '{"username": "${RDSMasterUsername}", "password":"${RDSMasterPassword}"}'
+      SecretString: !Sub '{"username": "${RDSMasterUsername}", "password":"${RDSMasterPassword}"}'
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties: 
