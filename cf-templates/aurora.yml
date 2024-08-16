@@ -11,6 +11,9 @@ Parameters:
     MinLength: '8'
     MaxLength: '20'
     Default: "hogehoge"
+  RDSDBName:
+    Type: String
+    Default: "test"
 Resources:
   RDSUserSecret:
     Type: 'AWS::SecretsManager::Secret'
@@ -18,9 +21,6 @@ Resources:
       Name: rds_user
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${RDSMasterUsername}", "password":"${RDSMasterPassword}"}'
-#        GenerateStringKey: "password"
-#        PasswordLength: 20
-#        ExcludeCharacters: '"@/\'
   RDSSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties: 
@@ -51,98 +51,17 @@ Resources:
       Engine: aurora-postgresql
       DBClusterIdentifier: !Ref RDSCluster
       DBInstanceClass: db.serverless
-  LambdaFunction:
-    DependsOn: RDSDBInstance1
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: initialize
-      Code:
-        ZipFile: |
-          import boto3
-          import cfnresponse
-          import os
-
-          RDS_CLUSTER_ARN = os.environ.get("RDS_CLUSTER_ARN")
-          SECRET_ARN = os.environ.get("SECRET_ARN")
-
-
-          def execute_statement(client, sql: str):
-              response = client.execute_statement(
-                  resourceArn=RDS_CLUSTER_ARN,
-                  secretArn=SECRET_ARN,
-                  sql=sql,
-                  includeResultMetadata=False,
-                  formatRecordsAs="JSON",
-              )
-              return response
-
-
-          SQLS = [
-              """CREATE DATABASE hogehoge;
-              """,
-              """CREATE SCHEMA hoge_schema;
-              """,
-          ]
-
-
-          def handler(event, context):
-              try:
-                  client = boto3.client("rds-data")
-                  [execute_statement(client, sql) for sql in SQLS]
-
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
-              except Exception:  # noqa: E722
-                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
-
-
-      Handler: index.handler
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Runtime: python3.9
-      Timeout: 60
-      Environment:
-        Variables:
-          RDS_CLUSTER_ARN: !GetAtt RDSCluster.DBClusterArn
-          SECRET_ARN: !Ref RDSUserSecret
-      VpcConfig:
-        SecurityGroupIds:
-          - !ImportValue VPCDefaultSecurityGroup
-        SubnetIds:
-          - !ImportValue PrivateSubnetOne
-          - !ImportValue PrivateSubnetTwo
-  LambdaExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      Policies:
-      - PolicyName: lambda-execute-role
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-            - logs:*
-            Resource: arn:aws:logs:*:*:*
-          - Effect: Allow
-            Action:
-            - "rds-data:*"
-            - "ec2:CreateNetworkInterface"
-            - "ec2:DescribeNetworkInterfaces"
-            - "ec2:DetachNetworkInterface"
-            - "ec2:DeleteNetworkInterface"
-            Resource: "*"
-
-  InvokeLambda:
-    Type: AWS::CloudFormation::CustomResource
-    Version: "1.0"
-    Properties:
-      ServiceTimeout: 60
-      ServiceToken: !GetAtt LambdaFunction.Arn
+      DBName: ''
+Outputs:
+  OutputRDSUserSecretArn:
+    Value: !Ref RDSUserSecret
+    Export:
+      Name: RDSUserSecretArn
+  OutputRDSClusterArn:
+    Value: !Ref RDSCluster
+    Export:
+      Name: RDSCluster
+  OutputRDSDBName:
+    Value: !Ref RDSDBName
+    Export:
+      Name: RDSDBName
