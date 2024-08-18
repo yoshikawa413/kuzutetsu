@@ -1,0 +1,65 @@
+drop schema partman CASCADE;
+create schema partman;
+CREATE EXTENSION pg_partman SCHEMA partman;
+
+CREATE TABLE public.original_table (
+    col1 bigint not null
+    , col2 text not null
+    , col3 timestamptz DEFAULT now()
+    , col4 text);
+
+CREATE INDEX ON public.original_table (col1);
+
+delete from public.original_table
+
+WITH sample_data AS (SELECT generate_series(1,1000000) AS idx)
+INSERT INTO public.original_table (col1, col2, col3, col4)
+SELECT idx,
+       'stuff'||idx,
+	   timestamp '2024-01-01 10:00:00+09:00' + random() * (timestamp '2024-08-01 10:00:00+09:00' - timestamp '2024-01-01 10:00:00+09:00'),
+	   'col4-'||idx
+	   FROM sample_data;
+
+ALTER TABLE public.original_table RENAME to old_nonpartitioned_table;
+
+drop table if exists public.original_table;
+CREATE TABLE public.original_table (
+    col1 bigint not null
+    , col2 text not null
+    , col3 timestamptz DEFAULT now()
+    , col4 text)
+PARTITION BY RANGE (col3);
+
+CREATE INDEX ON public.original_table (col3);
+
+SELECT routines.routine_name, parameters.data_type, parameters.ordinal_position
+FROM information_schema.routines
+    LEFT JOIN information_schema.parameters ON routines.specific_name=parameters.specific_name
+WHERE routines.specific_schema='partman' and routine_name = 'create_parent'
+ORDER BY routines.routine_name, parameters.ordinal_position;
+
+SELECT partman.create_parent(
+    p_parent_table := 'public.original_table'
+    , p_control := 'col3'
+    , p_type := 'native'
+	, p_interval := '1 day'
+	, p_constraint_cols := NULL
+	, p_premake := 30
+    , p_automatic_maintenance := 'on'
+	, p_start_partition := NULL
+	, p_inherit_fk := true
+	, p_epoch := 'none'
+    , p_upsert := ''
+    , p_publications := NULL
+	, p_trigger_return_null := true
+	, p_template_table := NULL
+	, p_jobmon := true
+	, p_date_trunc_interval := NULL
+);
+
+SELECT partman.create_parent(
+    p_parent_table := 'public.original_table'
+    , p_control := 'col3'
+    , p_type := 'native'
+	, p_interval := '1 day'
+);
