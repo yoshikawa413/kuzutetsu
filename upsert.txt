@@ -1,7 +1,24 @@
+BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+create table hoge
+(id text primary key, name text)
+
+INSERT INTO hoge
+values ('2', 'aa2')
+ON CONFLICT(id)
+DO UPDATE SET name = 'updated';
+
 MERGE INTO hoge
-USING (SELECT 2 AS id) AS target
+USING (SELECT '2' AS id) AS target
 ON hoge.id = target.id
 WHEN MATCHED THEN
 UPDATE SET name = 'updated'
 WHEN NOT MATCHED
-THEN INSERT (id, name) VALUES (2, 'aa');
+THEN INSERT (id, name) VALUES ('2', 'aa2');
+
+COMMIT;
+
+delete from hoge;
+select * from hoge;
